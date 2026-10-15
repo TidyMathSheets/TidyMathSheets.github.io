@@ -1,0 +1,24 @@
+# Runs every 3 hours: moves pins whose scheduled time has passed onto the site and into the
+# RSS feeds, so Pinterest auto-publishes a couple per day. Needs no secrets and no Claude.
+name: publish-due-pins
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 site_builder.py .
+      - run: |
+          git config user.name "pin-bot"
+          git config user.email "pin-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Publish due pins"
+          git push
